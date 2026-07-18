@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qori Capital &middot; Control Patrimonial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/patrimonio.css">
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Control patrimonial</p>
+  <h1>Qori Capital</h1>
+  <p class="sub">Todas tus cuentas, tus prestamos y tus gastos en un solo lugar - con historial editable y resultado mensual.</p>
+  <p class="status-msg" id="statusMsg">Cargando datos...</p>
+
+  <div class="top-actions">
+    <span class="save-log" id="saveLogText">Aun no se ha guardado manualmente.</span>
+    <button class="btn primary" id="saveBtn">&#128190; Guardar</button>
+    <button class="btn" id="recoverBtn">&#128194; Recuperar</button>
+    <button class="btn" id="excelBtn">&#128202; Excel</button>
+    <button class="btn" id="pdfBtn">&#128196; PDF</button>
+    <input class="hidden-input" type="file" id="backupInput" accept="application/json,.json">
+  </div>
+
+  <nav class="main-menu" aria-label="Menu principal">
+    <button class="menu-btn active" data-view-target="dashboardView">Panel principal</button>
+    <button class="menu-btn" data-view-target="monthlyView">Ingresos y gastos</button>
+    <button class="menu-btn" data-view-target="banksView">Bancos y Ahorros</button>
+    <button class="menu-btn" data-view-target="ledgerView">Libro Mayor</button>
+    <button class="menu-btn" data-view-target="reportsView">Reportes</button>
+    <button class="menu-btn" data-view-target="auditView">Auditoria</button>
+  </nav>
+
+  <div class="app-view active" id="dashboardView">
+    <div class="overview">
+      <div>
+        <p class="total-label">Patrimonio total</p>
+        <div class="total-amount" id="totalAmount">S/ 0.00</div>
+        <p class="total-delta" id="totalDelta">- movimientos registrados</p>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="gauge-box">
+        <p class="gauge-title">Liquidez libre</p>
+        <svg id="gaugeSvg" width="150" height="150" viewBox="0 0 150 150"></svg>
+        <div class="gauge-value" id="gaugeValue">0%</div>
+        <p class="gauge-caption">Porcion de tu patrimonio disponible para nuevas jugadas, sin comprometer.</p>
+      </div>
+    </div>
+    <div class="section-title"><h2>Totales</h2></div>
+    <div class="totals-wrap" id="mainTotals"></div>
+  </div>
+
+  <div class="app-view" id="monthlyView">
+    <div class="month-filter-bar">
+      <label for="monthlyMonthFilter">Mes:</label>
+      <select id="monthlyMonthFilter"></select>
+    </div>
+    <div class="saldo-inicial-bar" id="saldoInicialBar"></div>
+    <div class="section-title"><h2 id="operativaSectionTitle">Cuenta Operativa</h2></div>
+    <div class="grid" id="scotibankGrid"></div>
+
+    <div class="section-title"><h2>Gastos</h2></div>
+    <div class="grid gastos-grid" id="gastosGrid"></div>
+
+    <div class="section-title"><h2>Resultado del mes</h2></div>
+    <div class="month-highlight stats-5" id="monthHighlight"></div>
+
+    <div class="section-title"><h2>Distribucion de gastos</h2></div>
+    <div class="gasto-chart-tabs">
+      <button class="chart-tab-btn active" data-chart-tab="ejecutado">Ejecutado</button>
+      <button class="chart-tab-btn" data-chart-tab="proyectado">Proyectado</button>
+      <select class="filter" id="gastoChartPeriod" style="margin-left:auto;">
+        <option value="month">Este mes</option>
+        <option value="last3">Ultimos 3 meses</option>
+        <option value="last6">Ultimos 6 meses</option>
+        <option value="year">Anio</option>
+      </select>
+    </div>
+    <div class="gasto-dist-wrap">
+      <div class="chart-box" style="height:260px;"><canvas id="gastoDistChart"></canvas></div>
+      <div class="legend" id="gastoDistLegend"></div>
+    </div>
+  </div>
+
+  <div class="app-view" id="banksView">
+    <div class="section-title"><h2>Bancos y Ahorros</h2></div>
+    <div class="grid" id="accountsGrid"></div>
+
+    <div class="section-title"><h2>Transferir</h2></div>
+    <div class="card transfer-card" id="transferPanel"></div>
+  </div>
+
+  <div class="app-view" id="reportsView">
+    <div class="ledger-section">
+    <div class="ledger-head">
+      <h2>Graficos</h2>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-box"><canvas id="patrimonioPie"></canvas></div>
+      <div class="chart-box"><canvas id="resultadoBar"></canvas></div>
+      <div class="chart-box"><canvas id="evolucionLine"></canvas></div>
+    </div>
+    </div>
+
+    <div class="ledger-section">
+    <div class="ledger-head">
+      <h2>Resumen mensual</h2>
+    </div>
+    <table>
+      <thead><tr><th>Mes</th><th style="text-align:right;">Ingresos</th><th style="text-align:right;">Retiros</th><th style="text-align:right;">Gastos fijos</th><th style="text-align:right;">Gastos variables</th><th style="text-align:right;">Resultado neto</th></tr></thead>
+      <tbody id="monthlyBody"></tbody>
+    </table>
+    <div class="no-data" id="noMonthData" style="display:none;">Aun no hay movimientos registrados.</div>
+    </div>
+  </div>
+
+  <div class="app-view" id="ledgerView">
+    <div class="ledger-section">
+    <div class="ledger-head">
+      <h2>Registro general</h2>
+      <div class="ledger-tools">
+        <input class="search-input" type="search" id="ledgerSearch" placeholder="Buscar en Libro Mayor">
+        <select class="filter" id="movementTypeFilter">
+          <option value="all">Todos los movimientos</option>
+          <option value="ingreso">Solo Ingresos</option>
+          <option value="egreso">Solo Egresos</option>
+        </select>
+        <select class="filter" id="ledgerFilter"><option value="all">Todas las cuentas</option></select>
+        <select class="filter" id="bankSubFilter" style="display:none;"><option value="all">Todos los bancos</option></select>
+        <select class="filter" id="categoryFilter"><option value="all">Todas las categorias</option></select>
+        <select class="filter" id="ledgerMonthFilter"><option value="all">Todos los meses</option></select>
+      </div>
+    </div>
+    <div class="ledger-totals" id="ledgerTotals"></div>
+    <table>
+      <thead><tr><th>Fecha</th><th>Cuenta</th><th>Detalle</th><th style="text-align:right;">Ingresos</th><th style="text-align:right;">Egresos</th><th style="text-align:right;">Acciones</th></tr></thead>
+      <tbody id="ledgerBody"></tbody>
+    </table>
+    <div class="no-data" id="noDataMsg" style="display:none;">Aun no hay movimientos registrados.</div>
+    </div>
+  </div>
+
+  <div class="app-view" id="auditView">
+    <div class="ledger-section">
+    <div class="ledger-head">
+      <h2>Auditoria</h2>
+    </div>
+    <div class="audit-list">
+      <table>
+        <thead><tr><th>Fecha y hora</th><th>Accion</th><th>Detalle</th></tr></thead>
+        <tbody id="auditBody"></tbody>
+      </table>
+    </div>
+    <div class="no-data" id="noAuditData" style="display:none;">Aun no hay registros de auditoria.</div>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    <span>Los cambios se guardan automaticamente en tu almacenamiento personal. El boton "Guardar" ademas deja un registro con fecha y hora.</span>
+    <button class="reset-link" id="resetBtn">Borrar todos los datos</button>
+  </div>
+
+  <div class="app-footer">
+    &copy; 2026 Qori Capital &nbsp;|&nbsp; Desarrollado por Daniel Luza &nbsp;|&nbsp; Todos los derechos reservados &nbsp;|&nbsp; Tutoriales, actualizaciones y licencias: <a href="https://linktr.ee/dnlluza" target="_blank" rel="noopener">linktr.ee/dnlluza</a>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal-box" id="confirmBox">
+    <p class="modal-title" id="confirmTitle">Confirmar accion</p>
+    <p class="modal-msg" id="confirmMsg"></p>
+    <input type="text" id="confirmInput" class="modal-input" style="display:none;">
+    <div class="modal-actions">
+      <button class="btn" id="confirmCancelBtn">Cancelar</button>
+      <button class="btn primary" id="confirmOkBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/accounts.js"></script>
+<script src="js/ledger.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
